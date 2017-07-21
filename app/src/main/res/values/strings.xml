@@ -1,0 +1,10 @@
+<resources>
+    <string name="app_name">Movie Search</string>
+    <string name="internet_access">Internet Access</string>
+    <string name="rationaleInternet">Internet Access is needed to fetch movies from the online database</string>
+    <string name="never_ask_again">Permission for Internet will not be asked again</string>
+    <string name="deny_internet">Internet Permission Denied</string>
+    <string name="button_allow">Allow</string>
+    <string name="button_deny">Deny</string>
+    <string name="network_error">Network Error! Please try again later</string>
+</resources>
