@@ -1,8 +1,12 @@
 package com.noc.moviesearch;
 
 import android.content.Intent;
+import android.support.v4.view.MenuItemCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.support.v7.widget.SearchView;
+import android.view.Menu;
+import android.view.MenuItem;
 import android.view.View;
 import android.widget.AdapterView;
 import android.widget.ListView;
@@ -16,14 +20,13 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.util.ArrayList;
-import java.util.List;
-import java.util.jar.Manifest;
 
+import cz.msebera.android.httpclient.Header;
 import pub.devrel.easypermissions.EasyPermissions;
 
 public class BoxOfficeActivity extends AppCompatActivity {
 
-    RottenTomatoesClient client;
+    TMDBClient client;
     private ListView lvMovies;
     private BoxOfficeMoviesAdapter adapterMovies;
     private ProgressBar progressBar;
@@ -41,7 +44,7 @@ public class BoxOfficeActivity extends AppCompatActivity {
         setupMovieSelectedListener();
         String[] perms = {android.Manifest.permission.INTERNET};
         if(EasyPermissions.hasPermissions(this, perms)) {
-            fetchBoxOfficeMovies();
+            fetchBoxOfficeMovies("");
         }
         else {
             EasyPermissions.requestPermissions(this, "Internet", 74, perms);
@@ -59,40 +62,94 @@ public class BoxOfficeActivity extends AppCompatActivity {
         });
     }
 
-    public void fetchBoxOfficeMovies() {
+    public void fetchBoxOfficeMovies(String query) {
         progressBar.setVisibility(View.VISIBLE);
-        client = new RottenTomatoesClient();
-
-        client.getBoxOfficeMovies(new JsonHttpResponseHandler() {
-            @Override
-            public void onSuccess(int statusCode, cz.msebera.android.httpclient.Header[] headers, JSONObject response) {
-                progressBar.setVisibility(View.GONE);
-                JSONArray items;
-                try {
-                    items = response.getJSONArray("movies");
-                    ArrayList<BoxOfficeMovie> movies = BoxOfficeMovie.fromJson(items);
-                    for(BoxOfficeMovie movie : movies) {
-                        adapterMovies.add(movie);
+        client = new TMDBClient();
+        if(query == "") {
+            adapterMovies.clear();
+            adapterMovies.notifyDataSetChanged();
+            client.getBoxOfficeMovies(new JsonHttpResponseHandler() {
+                @Override
+                public void onSuccess(int statusCode, cz.msebera.android.httpclient.Header[] headers, JSONObject response) {
+                    progressBar.setVisibility(View.GONE);
+                    JSONArray items;
+                    try {
+                        items = response.getJSONArray("results");
+                        ArrayList<BoxOfficeMovie> movies = BoxOfficeMovie.fromJson(items);
+                        for (BoxOfficeMovie movie : movies) {
+                            adapterMovies.add(movie);
+                        }
+                        adapterMovies.notifyDataSetChanged();
+                    } catch (JSONException e) {
+                        e.printStackTrace();
                     }
-                    adapterMovies.notifyDataSetChanged();
-                } catch (JSONException e) {
-                    e.printStackTrace();
                 }
-            }
 
-            @Override
-            public void onFailure(int statusCode, cz.msebera.android.httpclient.Header[] headers, String responseString, Throwable throwable) {
-                progressBar.setVisibility(View.GONE);
-                Toast.makeText(getApplicationContext(), R.string.network_error, Toast.LENGTH_SHORT).show();
-                super.onFailure(statusCode, headers, responseString, throwable);
-            }
-        });
+                @Override
+                public void onFailure(int statusCode, cz.msebera.android.httpclient.Header[] headers, String responseString, Throwable throwable) {
+                    progressBar.setVisibility(View.GONE);
+                    Toast.makeText(getApplicationContext(), R.string.network_error, Toast.LENGTH_SHORT).show();
+                    super.onFailure(statusCode, headers, responseString, throwable);
+                }
+            });
+        }
+        else {
+            adapterMovies.clear();
+            adapterMovies.notifyDataSetChanged();
+            client.searchBoxOfficeMovies(query, new JsonHttpResponseHandler() {
+                @Override
+                public void onSuccess(int statusCode, Header[] headers, JSONObject response) {
+                    progressBar.setVisibility(View.GONE);
+                    JSONArray items;
+                    try {
+                        items = response.getJSONArray("results");
+                        ArrayList<BoxOfficeMovie> movies = BoxOfficeMovie.fromJson(items);
+                        for (BoxOfficeMovie movie : movies) {
+                            adapterMovies.add(movie);
+                        }
+                        adapterMovies.notifyDataSetChanged();
+                    } catch (JSONException e) {
+                        e.printStackTrace();
+                    }
+                }
+                @Override
+                public void onFailure(int statusCode, Header[] headers, String responseString, Throwable throwable) {
+                    Toast.makeText(getApplicationContext(), R.string.network_error, Toast.LENGTH_SHORT).show();
+                    super.onFailure(statusCode, headers, responseString, throwable);
+                }
+            });
+        }
     }
 
     @Override
     public void onRequestPermissionsResult(int requestCode, String[] permissions, int[] grantResults) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults);
         EasyPermissions.onRequestPermissionsResult(requestCode, permissions, grantResults, this);
+    }
+
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        getMenuInflater().inflate(R.menu.menu_box_office, menu);
+        final MenuItem searchItem = menu.findItem(R.id.action_search);
+        final SearchView searchView = (SearchView) MenuItemCompat.getActionView(searchItem);
+        searchView.setOnQueryTextListener(new SearchView.OnQueryTextListener() {
+            @Override
+            public boolean onQueryTextSubmit(String query) {
+                fetchBoxOfficeMovies(query);
+                searchView.clearFocus();
+                searchView.setQuery("", false);
+                searchView.setIconified(true);
+                searchItem.collapseActionView();
+                BoxOfficeActivity.this.setTitle(query);
+                return true;
+            }
+
+            @Override
+            public boolean onQueryTextChange(String newText) {
+                return false;
+            }
+        });
+        return true;
     }
 }
 

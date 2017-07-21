@@ -7,4 +7,12 @@
     <string name="button_allow">Allow</string>
     <string name="button_deny">Deny</string>
     <string name="network_error">Network Error! Please try again later</string>
+    <string name="synopsis">Synopsis</string>
+    <string name="hint">This is a story about a protagonist defeating an antagonist</string>
+    <string name="the_dark_knight">The Dark Knight</string>
+    <string name="average_vote">Average vote: 9</string>
+    <string name="popularity">Popularity: 93</string>
+    <string name="cast">Cast</string>
+    <string name="genres">Genres : horror, Thriller</string>
+    <string name="loading_detail_message">Please wait while we fetch cast and genres for you</string>
 </resources>
